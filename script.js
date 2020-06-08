@@ -1,17 +1,28 @@
-var t=0;
-var rate = 0.04;
+var record_animation = false;
+var name = "image_"
+var total_frames = 300;
+var frame = 0;
+var loop = 0;
+var total_time = 2*Math.PI;
+var rate = total_time/total_frames;
 
-var amplitude = 150;
-var frequency = 0.3;
+var t = 0;
+//var rate = 0.04;
+
+var amplitude = 0;
+var frequency = 0.2;
 
 var get_mouse_pos = false;
 var get_touch_pos = false;
+
+var stop_animation = false;
+var fps, fpsInterval, startTime, now, then, elapsed;
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 
-draw();
+startAnimating(50);
 
 
 function draw() {
@@ -25,7 +36,7 @@ function draw() {
   ctx.fillRect(0, 0, W, H);
   
 
-  let s = rate*t;
+  let s = t;
   
   hue_shift = 100;
   luminosity_shift = 10;
@@ -40,7 +51,7 @@ function draw() {
     wave(ctx, 15 , 3, [300 - i*hue_shift, 100, 70 - i*luminosity_shift], alpha + i*alpha_shift, H/2, W, amplitude - i*amplitude_shift, frequency + frequency_shift, s);    
   }
   
-  t += 1;
+  //t += 1;
   
   canvas.addEventListener('mousedown', e => {
     get_mouse_pos = true;
@@ -74,7 +85,7 @@ function draw() {
     event.preventDefault();
   }, false);
   
-  window.requestAnimationFrame(draw);
+  //window.requestAnimationFrame(draw);
 }
 
 
@@ -130,4 +141,60 @@ function getTouchPosition(canvas, event) {
     amplitude = 0.6*y;
     frequency = 0.01 + 0.7*x;
        
+}
+
+function startAnimating(fps) {
+    
+  fpsInterval = 1000/fps;
+  then = window.performance.now();
+  startTime = then;
+  
+  animate();
+}
+
+function animate(newtime) {
+
+  if (stop_animation) {
+      return;
+  }
+
+  requestAnimationFrame(animate);
+
+  now = newtime;
+  elapsed = now - then;
+
+  if (elapsed > fpsInterval) {
+      then = now - (elapsed % fpsInterval);
+  
+      draw();
+      frame = (frame+1)%total_frames;
+      time = rate*frame;
+      t = time;
+
+      amplitude = 0 + 150*Math.sin(t)**2;
+      frequency = 0.2 + .2*Math.sin(t)**2;
+
+      if(record_animation) {
+
+          if (loop === 1) { 
+          let frame_number = frame.toString().padStart(total_frames.toString().length, '0');
+          let filename = name+frame_number+'.png'
+              
+          dataURL = canvas.toDataURL();
+          var element = document.createElement('a');
+          element.setAttribute('href', dataURL);
+          element.setAttribute('download', filename);
+          element.style.display = 'none';
+          document.body.appendChild(element);
+          element.click();
+          document.body.removeChild(element);
+          }
+
+          if (frame + 1 === total_frames) {
+              loop += 1;
+          }
+
+          if (loop === 2) { stop_animation = true }
+      }
+  }
 }
